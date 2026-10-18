@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<link rel="icon" href="data:,">
+<title>pixie-tank</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    background: #000; overflow: hidden;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  #tank-toolbar {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%) translateY(12px);
+    display: flex; gap: 8px; align-items: center;
+    background: rgba(8, 20, 26, 0.88); border: 1px solid rgba(120, 180, 200, 0.25);
+    border-radius: 10px; padding: 8px 12px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    color: #cfe8f0; font-size: 13px; z-index: 10;
+    backdrop-filter: blur(6px);
+  }
+  #tank-toolbar.visible { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+  #tank-toolbar button {
+    background: rgba(30, 60, 72, 0.9); color: #dff2f8;
+    border: 1px solid rgba(120, 180, 200, 0.35); border-radius: 6px;
+    padding: 5px 10px; font: inherit; cursor: pointer;
+  }
+  #tank-toolbar button:hover { background: rgba(50, 90, 105, 0.95); }
+  #tb-count { min-width: 18px; text-align: center; font-weight: bold; }
+  #tb-nextfeed { opacity: 0.65; font-size: 11px; min-width: 90px; }
+  #tank-toolbar-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 11;
+    background: rgba(8, 20, 26, 0.6); color: #9fc8d8;
+    border: 1px solid rgba(120, 180, 200, 0.25); border-radius: 8px;
+    width: 36px; height: 36px; font-size: 17px; cursor: pointer;
+    opacity: 0.5; transition: opacity 0.2s;
+  }
+  #tank-toolbar-toggle:hover { opacity: 1; }
+</style>
+</head>
+<body>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

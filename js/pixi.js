@@ -1,0 +1,1 @@
+export * from 'https://cdn.jsdelivr.net/npm/pixi.js@8.22.0/dist/pixi.mjs';
