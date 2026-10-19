@@ -11,6 +11,9 @@ function mulberry(seed) {
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
+const GRASS_A = 0x1d5c3a;
+const GRASS_B = 0x3f9a5a;
+
 export class GrassBed {
   constructor(cx, width, fronds, depth) {
     this.cx = cx;
@@ -21,13 +24,16 @@ export class GrassBed {
     const r = mulberry((cx * 7919) | 0);
     for (let i = 0; i < fronds; i++) {
       const x = cx - width / 2 + (i / (fronds - 1)) * width + (r() - 0.5) * 6;
+      const hue = r();
       this.fronds.push({
         x,
         h: (70 + r() * 150) * vs,
         phase: r() * Math.PI * 2,
         lean: (r() - 0.5) * 18,
         w: 1.6 + r() * 1.2,
-        hue: r()
+        // static per-frond values computed once, not every frame:
+        baseY: groundY(x) + 2,
+        col: mixHex(GRASS_A, GRASS_B, 0.3 + hue * 0.5)
       });
     }
   }
@@ -36,14 +42,12 @@ export class GrassBed {
     for (const fr of this.fronds) {
       const sway = Math.sin(clock * 0.9 + fr.phase) * (6 + fr.h * 0.06)
                  + Math.sin(clock * 1.7 + fr.phase * 2.1) * 2.5;
-      const baseY = groundY(fr.x) + 2;
+      const baseY = fr.baseY;
       const tipX = fr.x + fr.lean + sway;
       const tipY = baseY - fr.h;
       const ctrlX = fr.x + fr.lean * 0.3 + sway * 0.25;
       const ctrlY = baseY - fr.h * 0.55;
-      const g0 = 0x1d5c3a, g1 = 0x3f9a5a;
-      const shade = fr.hue * 0.5;
-      const col = mixHex(g0, g1, 0.3 + shade);
+      const col = fr.col;
       const steps = 7;
       const left = [], right = [];
       for (let s = 0; s <= steps; s++) {

@@ -291,14 +291,22 @@ export class LightShafts {
     this.g.blendMode = 'add';
     this.W = 448;
     this.H = 368;
+    this.lastBuild = -1;
+    this.dirty = true;
   }
 
   setDims(w, h) {
     this.W = w;
     this.H = h;
+    this.dirty = true;
   }
 
   update(clock) {
+    // the shafts drift over ~10s timescales; rebuilding the geometry 10x/s
+    // is indistinguishable and skips most of the per-frame path building
+    if (!this.dirty && clock - this.lastBuild < 0.1) return;
+    this.dirty = false;
+    this.lastBuild = clock;
     const { W, H } = this;
     const xs = Math.min(1.8, Math.max(1, W / 448));
     this.g.clear();

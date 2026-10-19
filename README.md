@@ -6,6 +6,8 @@ The display **fills the entire browser window** — the tank's virtual size stre
 
 No AI model, no build step, no image assets. Everything is drawn by code.
 
+It's also built to stay **light on your machine**: the sim renders at a capped 30fps, sea grass redraws at 10Hz (its sway is slow), light shafts rebuild at 10Hz, bubbles and food pellets are sprite pools instead of per-frame path drawing, pixel ratio is capped at 1.5, and the night overlays aren't drawn during the day. That keeps the browser tab's CPU footprint small even on laptops.
+
 ## Features
 
 - **Full-window rendering**: no letterboxing; resize the window and the whole scene re-bakes live.

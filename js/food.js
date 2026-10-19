@@ -1,13 +1,33 @@
+import { Container, Sprite, Texture } from './pixi.js';
 import { groundY, tankW } from './terrain.js';
 
 const SINK_SPEED = 8;
 const FLOOR_LIFE = 15;
 const MAX_PELLETS = 24;
 
+function bakePelletTexture() {
+  const S = 24;
+  const c = document.createElement('canvas');
+  c.width = c.height = S;
+  const ctx = c.getContext('2d');
+  const cx = S / 2, cy = S / 2;
+  ctx.fillStyle = 'rgba(138,106,60,0.9)';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, S * 0.34, S * 0.28, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(184,144,88,0.7)';
+  ctx.beginPath();
+  ctx.ellipse(cx - S * 0.07, cy - S * 0.07, S * 0.16, S * 0.11, 0, 0, Math.PI * 2);
+  ctx.fill();
+  return Texture.from(c);
+}
+
 export class FoodSystem {
   constructor() {
     this.pellets = [];
     this.autoTimer = 8;
+    this.view = new Container();
+    this.tex = bakePelletTexture();
   }
 
   get hasFood() {
@@ -15,7 +35,13 @@ export class FoodSystem {
   }
 
   drop(x, y = 8) {
-    if (this.pellets.length >= MAX_PELLETS) this.pellets.shift();
+    if (this.pellets.length >= MAX_PELLETS) {
+      const old = this.pellets.shift();
+      old.sprite.removeFromParent();
+    }
+    const sprite = new Sprite(this.tex);
+    sprite.anchor.set(0.5);
+    this.view.addChild(sprite);
     this.pellets.push({
       x: Math.max(16, Math.min(tankW() - 16, x + (Math.random() - 0.5) * 6)),
       y,
@@ -23,7 +49,8 @@ export class FoodSystem {
       age: 0,
       floorS: 0,
       alive: true,
-      fromPlayer: true
+      fromPlayer: true,
+      sprite
     });
   }
 
@@ -70,15 +97,15 @@ export class FoodSystem {
         }
       }
       if (p.age > 90) p.alive = false;
-    }
-    this.pellets = this.pellets.filter((p) => p.alive);
-  }
 
-  draw(g) {
-    for (const p of this.pellets) {
       const a = p.floorS > FLOOR_LIFE - 3 ? (FLOOR_LIFE - p.floorS) / 3 : 1;
-      g.ellipse(p.x, p.y, 1.8, 1.5).fill({ color: 0x8a6a3c, alpha: 0.9 * a });
-      g.ellipse(p.x - 0.4, p.y - 0.4, 0.8, 0.6).fill({ color: 0xb89058, alpha: 0.7 * a });
+      p.sprite.x = p.x;
+      p.sprite.y = p.y;
+      p.sprite.alpha = 0.92 * Math.max(0, Math.min(1, a));
+    }
+    if (this.pellets.some((p) => !p.alive)) {
+      for (const p of this.pellets) if (!p.alive) p.sprite.removeFromParent();
+      this.pellets = this.pellets.filter((p) => p.alive);
     }
   }
 }

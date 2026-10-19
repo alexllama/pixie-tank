@@ -14,9 +14,11 @@ const REF_AREA = REF_W * REF_H;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
 const app = new Application();
-await app.init({ background: 0x000000, antialias: true, autoDensity: true, resolution: Math.min(window.devicePixelRatio || 1, 2) });
+const dpr = window.devicePixelRatio || 1;
+await app.init({ background: 0x000000, antialias: dpr <= 1, autoDensity: true, resolution: Math.min(dpr, 1.5) });
 document.body.appendChild(app.canvas);
 app.canvas.style.display = 'block';
+app.ticker.maxFPS = 30; // the sim is smooth at 30fps and this halves render/CPU load
 
 const world = new Container();
 app.stage.addChild(world);
@@ -52,20 +54,16 @@ const backGrassG = new Graphics();
 world.addChild(backGrassG);
 let backBeds = makeBackGrass();
 
-const foodG = new Graphics();
-world.addChild(foodG);
-
-const bubblesG = new Graphics();
-world.addChild(bubblesG);
-
 const fishG = new Graphics();
 world.addChild(fishG);
 
 const frontGrassG = new Graphics();
-const frontBlur = new BlurFilter({ strength: 2.2, quality: 3 });
+const frontBlur = new BlurFilter({ strength: 2.2, quality: 1 });
 frontGrassG.filters = [frontBlur];
 world.addChild(frontGrassG);
 let frontBeds = makeFrontGrass();
+let grassDirty = true;
+let lastGrassDraw = -1;
 
 const vignetteSprite = new Sprite(bakeVignetteTexture());
 world.addChild(vignetteSprite);
@@ -96,6 +94,11 @@ const tank = {
     return { x, y: Math.min(VH * ZONE_FY[best], groundY(x) - 50) };
   }
 };
+
+// food and bubble views slot in between the back grass and the fish layer
+const layerIdx = world.getChildIndex(fishG);
+world.addChildAt(tank.foods.view, layerIdx);
+world.addChildAt(tank.bubbles.view, layerIdx + 1);
 
 function addFish(opts) {
   if (tank.fishes.length >= maxFish) return;
@@ -182,8 +185,10 @@ function applyLayout() {
 
   backBeds = makeBackGrass();
   frontBeds = makeFrontGrass();
+  grassDirty = true;
 
   tank.bubbleX = Math.round(VW * 0.758);
+  tank.bubbles.columnX = tank.bubbleX;
 }
 
 let layoutQueued = false;
@@ -201,6 +206,8 @@ for (let i = 0; i < 3; i++) addFish();
 
 let lastAutoUi = 0;
 let tickerErrorShown = false;
+let litCache = { dim: 1, night: 0 };
+let litTimer = 1e9;
 app.ticker.add((ticker) => {
   try {
     tick(ticker);
@@ -216,11 +223,22 @@ function tick(ticker) {
   const dt = Math.min(ticker.deltaMS / 1000, 0.1);
   tank.clock += dt;
 
-  const lit = lightingForDate();
+  litTimer += dt;
+  if (litTimer > 0.5) {
+    litTimer = 0;
+    litCache = lightingForDate();
+  }
+  const lit = litCache;
   tank.night = lit.night;
-  nightBgBlack.alpha = (1 - lit.dim) * 0.65;
-  nightBgBlue.alpha = lit.night * 0.24;
-  nightTop.alpha = (1 - lit.dim) * 0.45;
+  const aBg = (1 - lit.dim) * 0.65;
+  const aBlue = lit.night * 0.24;
+  const aTop = (1 - lit.dim) * 0.45;
+  nightBgBlack.alpha = aBg;
+  nightBgBlue.alpha = aBlue;
+  nightTop.alpha = aTop;
+  nightBgBlack.renderable = aBg > 0.01;   // in daytime these are full-screen
+  nightBgBlue.renderable = aBlue > 0.01;  // quads — skip drawing them
+  nightTop.renderable = aTop > 0.01;
 
   tank.foods.autoFeed(dt);
   tank.foods.update(dt, tank.fishes);
@@ -231,15 +249,17 @@ function tick(ticker) {
   tank.fishes = tank.fishes.filter((f) => !f.dying || f.deathT < 0.45);
 
   shafts.update(tank.clock);
-  backGrassG.clear();
-  for (const b of backBeds) b.draw(backGrassG, tank.clock);
-  frontGrassG.clear();
-  for (const b of frontBeds) b.draw(frontGrassG, tank.clock);
 
-  foodG.clear();
-  tank.foods.draw(foodG);
-  bubblesG.clear();
-  tank.bubbles.draw(bubblesG);
+  // grass sway moves a few px/s — rebuilding its paths at 10Hz instead of
+  // every frame is invisible and skips most of the per-frame tessellation
+  if (grassDirty || tank.clock - lastGrassDraw >= 0.1) {
+    grassDirty = false;
+    lastGrassDraw = tank.clock;
+    backGrassG.clear();
+    for (const b of backBeds) b.draw(backGrassG, tank.clock);
+    frontGrassG.clear();
+    for (const b of frontBeds) b.draw(frontGrassG, tank.clock);
+  }
 
   fishG.clear();
   for (const f of tank.fishes) drawFish(fishG, f, tank.clock);
