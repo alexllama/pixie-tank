@@ -73,7 +73,7 @@ No build step — Pages serves the files as-is. PixiJS is loaded from the jsDeli
 |---|---|
 | `js/main.js` | app init, layers, full-window layout/resize, game loop |
 | `js/terrain.js` | the shared sea-floor profile: `groundY(x)` dune curve that scene, grass, food, bubbles, and fish all follow |
-| `js/scene.js` | water gradient + terrain fill + rocks + shipwreck + pebbles baked to a texture, vignette, light shafts, shimmer noise |
+| `js/scene.js` | water gradient + terrain fill + rocks + shipwreck + pebbles baked to two textures (water shimmers, seabed stays static), vignette, light shafts, shimmer noise |
 | `js/grass.js` | procedural seagrass beds with per-frond sway |
 | `js/fish.js` | fish physics, goal AI, boids, and the procedural fish renderer (ported from pocket-tank's `draw_fish_core`: body polygon, flapping tail, yaw turning) |
 | `js/species.js` | the 5 species definitions |

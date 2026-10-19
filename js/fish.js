@@ -105,15 +105,17 @@ export class Fish {
     if (Math.abs(this.vx) > 3) {
       const want = this.vx > 0 ? 1 : -1;
       if (want !== Math.sign(this.yaw)) {
-        this.yaw = lerp(this.yaw, 0, clamp(dt * 6, 0, 1));
-        if (Math.abs(this.yaw) < 0.12) this.yaw = want;
+        // glide through the turn instead of snapping the body across, so the
+        // tail and fins sweep over rather than fluttering
+        this.yaw = lerp(this.yaw, 0, clamp(dt * 3, 0, 1));
+        if (Math.abs(this.yaw) < 0.02) this.yaw = want * 0.02;
       } else {
-        this.yaw = lerp(this.yaw, want, clamp(dt * 5, 0, 1));
+        this.yaw = lerp(this.yaw, want, clamp(dt * 4, 0, 1));
       }
     } else {
-      this.yaw = lerp(this.yaw, Math.sign(this.yaw || 1), clamp(dt * 2, 0, 1));
+      this.yaw = lerp(this.yaw, Math.sign(this.yaw || 1), clamp(dt * 1.5, 0, 1));
     }
-    this.yawTail = lerp(this.yawTail, this.yaw, clamp(dt * 3.2, 0, 1));
+    this.yawTail = lerp(this.yawTail, this.yaw, clamp(dt * 2.4, 0, 1));
 
     if (this.dying) {
       this.deathT += dt;
@@ -287,7 +289,8 @@ export function drawFish(g, f, clock) {
   const { size } = f;
   const fade = f.dying ? Math.max(0, 1 - f.deathT / 0.45) : 1;
   if (fade <= 0) return;
-  const tail = Math.sin(clock * (8 + f.speed * 0.055) + f.wander) * (0.32 + f.speed * 0.007);
+  // gentle body beat: ~0.8 Hz at rest, ~1.1 Hz when darting
+  const tail = Math.sin(clock * (5.2 + f.speed * 0.03) + f.wander) * (0.3 + f.speed * 0.005);
   const pale = f.hunger > 7 ? ((f.hunger - 7) / 3) * 0.35 : 0;
   const pitch = clamp(Math.atan2(f.vy, Math.abs(f.vx) + 1) * 0.55, -0.61, 0.61);
   const cp = Math.cos(pitch), spn = Math.sin(pitch);

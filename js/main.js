@@ -3,7 +3,7 @@ import { Fish, drawFish } from './fish.js';
 import { makeBackGrass, makeFrontGrass } from './grass.js';
 import { FoodSystem } from './food.js';
 import { BubbleSystem } from './bubbles.js';
-import { bakeSceneTexture, bakeVignetteTexture, bakeNightGradientTexture, makeNoiseTexture, LightShafts } from './scene.js';
+import { bakeWaterTexture, bakeGroundTexture, bakeVignetteTexture, bakeNightGradientTexture, makeNoiseTexture, LightShafts } from './scene.js';
 import { lightingForDate, cycleLightMode } from './lighting.js';
 import { createUI } from './ui.js';
 import { setTerrain, groundY } from './terrain.js';
@@ -27,15 +27,19 @@ let VW = REF_W;
 let VH = REF_H;
 let maxFish = 15;
 
-const sceneSprite = new Sprite(bakeSceneTexture());
-world.addChild(sceneSprite);
+// only the water layer gets the shimmer displacement, so the seabed stays still
+const waterSprite = new Sprite(bakeWaterTexture());
+world.addChild(waterSprite);
+
+const groundSprite = new Sprite(bakeGroundTexture());
+world.addChild(groundSprite);
 
 const noiseTex = makeNoiseTexture(128);
 const dispSprite = new Sprite(noiseTex);
 dispSprite.renderable = false;
 world.addChild(dispSprite);
 const dispFilter = new DisplacementFilter({ sprite: dispSprite, scale: { x: 10, y: 7 } });
-sceneSprite.filters = [dispFilter];
+waterSprite.filters = [dispFilter];
 
 const shafts = new LightShafts();
 world.addChild(shafts.g);
@@ -170,8 +174,10 @@ function applyLayout() {
   world.scale.set(w / VW, h / VH);
   world.position.set(0, 0);
 
-  sceneSprite.texture = bakeSceneTexture();
-  sceneSprite.setSize(VW, VH);
+  waterSprite.texture = bakeWaterTexture();
+  waterSprite.setSize(VW, VH);
+  groundSprite.texture = bakeGroundTexture();
+  groundSprite.setSize(VW, VH);
   vignetteSprite.texture = bakeVignetteTexture();
   vignetteSprite.setSize(VW, VH);
 

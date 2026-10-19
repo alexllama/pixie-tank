@@ -152,16 +152,27 @@ function drawWreck(ctx, W, gy) {
   ctx.fill();
 }
 
-export function bakeSceneTexture() {
-  const W = tankW();
-  const H = tankH();
-  const base = groundBase();
+function makeCanvas(W, H) {
   const S = 2;
   const c = document.createElement('canvas');
   c.width = W * S;
   c.height = H * S;
   const ctx = c.getContext('2d');
   ctx.scale(S, S);
+  return { c, ctx };
+}
+
+function textureFrom(c) {
+  const tex = Texture.from(c);
+  tex.source.style.scaleMode = 'linear';
+  return tex;
+}
+
+export function bakeWaterTexture() {
+  const W = tankW();
+  const H = tankH();
+  const base = groundBase();
+  const { c, ctx } = makeCanvas(W, H);
 
   const grad = ctx.createLinearGradient(0, 0, 0, H);
   grad.addColorStop(0, hex(WATER_TOP));
@@ -170,6 +181,16 @@ export function bakeSceneTexture() {
   grad.addColorStop(1, hex(WATER_DEEP));
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
+
+  return textureFrom(c);
+}
+
+// rocks, shipwreck, sand and pebbles are scenery: they stay perfectly still,
+// so they're kept out of the water layer that the shimmer displaces
+export function bakeGroundTexture() {
+  const W = tankW();
+  const H = tankH();
+  const { c, ctx } = makeCanvas(W, H);
 
   const rnd = makeRnd(1337);
   const rs = Math.min(1.6, Math.max(1, W / 448));
@@ -222,9 +243,7 @@ export function bakeSceneTexture() {
     ctx.fill();
   }
 
-  const tex = Texture.from(c);
-  tex.source.style.scaleMode = 'linear';
-  return tex;
+  return textureFrom(c);
 }
 
 export function bakeNightGradientTexture() {
